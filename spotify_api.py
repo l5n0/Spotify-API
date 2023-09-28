@@ -2,7 +2,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from dotenv import load_dotenv
 import os
-from tabulate import tabulate
+import json
 
 load_dotenv()
 
@@ -20,28 +20,25 @@ def get_artist_info(artist_name):
     
     if results['artists']['total'] > 0:
         artist = results['artists']['items'][0]
-        artist_info = [
-            ["Artist Name:", artist['name']],
-            ["Genres:", ', '.join(artist['genres'])],
-            ["Followers:", artist['followers']['total']],
-            ["Popularity:", artist['popularity']]
-        ]
+        artist_info = {
+            "Artist Name": artist['name'],
+            "Genres": artist['genres'],
+            "Followers": artist['followers']['total'],
+            "Popularity": artist['popularity']
+        }
 
         top_tracks = sp.artist_top_tracks(artist['id'])
         track_info = [
-            [f"{i}.", track['name']] for i, track in enumerate(top_tracks['tracks'], start=1)
+            {"Track Number": i, "Track Name": track['name']} for i, track in enumerate(top_tracks['tracks'], start=1)
         ]
 
-        artist_table = tabulate(artist_info, tablefmt="html")
-        top_tracks_table = tabulate(track_info, tablefmt="html")
+        artist_info["Top Tracks"] = track_info
 
-        with open("artist_info.html", "w", encoding='utf-8') as html_file:
-            html_file.write("<h1>Artist Information</h1>")
-            html_file.write(artist_table)
-            html_file.write("<h1>Top Tracks</h1>")
-            html_file.write(top_tracks_table)
+        # Write to a JSON file
+        with open(f"{artist_name}_info.json", "w", encoding='utf-8') as json_file:
+            json.dump(artist_info, json_file, ensure_ascii=False, indent=4)
 
-        print(f"Artist information for '{artist_name}' saved to artist_info.html")
+        print(f"Artist information for '{artist_name}' saved to {artist_name}_info.json")
     else:
         print(f"No artist found with the name '{artist_name}'")
 
